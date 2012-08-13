@@ -267,7 +267,7 @@ void Database::loadProcList(wxInputStream &file,bool collapseKernelCalls)
 
 		std::set<CallStackPtrComp>::iterator iter = callstackSet.find(&callstack);
 		if(iter != callstackSet.end()) {
-			iter->Get()->samplecount += callstack.samplecount;
+			((CallStackPtrComp)*iter).Get()->samplecount += callstack.samplecount;
 			continue;
 		}
 		callstacks.push_back(callstack);

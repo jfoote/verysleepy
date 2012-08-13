@@ -38,6 +38,7 @@ enum
 	MainWin_Open,
 	MainWin_SaveAs,
 	MainWin_ExportAsCsv,
+	MainWin_ExportCallgraphAsCsv,
 	MainWin_View_Collapse_OS,
 	MainWin_View_Stats,
 	MainWin_ResetToRoot,
@@ -86,6 +87,7 @@ MainWin::MainWin(const wxString& title,
 	menuFile->Append(MainWin_Open, _T("&Open..."), _T("Opens an existing profile"));
 	menuFile->Append(MainWin_SaveAs, _T("Save &As..."), _T("Saves the profile data to a file"));
 	menuFile->Append(MainWin_ExportAsCsv, _T("&Export as CSV..."), _T("Export the profile data to a CSV file"));
+	menuFile->Append(MainWin_ExportCallgraphAsCsv, _T("&Export as Callgraph as CSV..."), _T("Export the callgraph data to a CSV file"));
 	menuFile->AppendSeparator();
 	menuFile->Append(MainWin_Quit, _T("E&xit\tAlt-X"), _T("Quit this program"));
 
@@ -241,6 +243,7 @@ EVT_MENU(MainWin_Quit,  MainWin::OnQuit)
 EVT_MENU(MainWin_Open,  MainWin::OnOpen)
 EVT_MENU(MainWin_SaveAs,  MainWin::OnSaveAs)
 EVT_MENU(MainWin_ExportAsCsv,  MainWin::OnExportAsCsv)
+EVT_MENU(MainWin_ExportCallgraphAsCsv,  MainWin::OnExportCallgraphAsCsv)
 EVT_MENU(MainWin_ResetToRoot, MainWin::ResetToRoot)
 EVT_UPDATE_UI(MainWin_ResetToRoot, MainWin::ResetToRootUpdate)
 EVT_MENU(MainWin_View_Collapse_OS,  MainWin::OnCollapseOS)
@@ -329,6 +332,33 @@ void MainWin::OnExportAsCsv(wxCommandEvent& WXUNUSED(event))
 		}
 	}
 }
+
+void MainWin::OnExportCallgraphAsCsv(wxCommandEvent& WXUNUSED(event))
+{
+	wxFileDialog dlg(this, "Export File As", "", "capture_callgraph.csv", "CSV Files (*.csv)|*.csv", 
+		wxFD_SAVE|wxFD_OVERWRITE_PROMPT);
+	if (dlg.ShowModal() != wxID_CANCEL)
+	{
+		wxFileOutputStream file(dlg.GetPath());
+		if(!file.IsOk())
+			wxLogSysError("Could not export profile data.");
+		wxTextOutputStream txt(file);
+		for each(const Database::Item &item in proclist->list.items) {
+			txt << item.symbol->procname << ",";
+			txt << item.symbol->module << ",";
+			txt << item.symbol->sourcefile << ",";
+			txt << item.symbol->sourceline << ",";
+			for each(const Database::Item &item in database->getCallers(item.symbol).items) {
+				txt << item.symbol->procname << ",";
+				txt << item.symbol->module << ",";
+				txt << item.symbol->sourcefile << ",";
+				txt << item.symbol->sourceline << ",";
+			}
+			txt << "\n";
+		}
+	}
+}
+
 
 void MainWin::OnCollapseOS(wxCommandEvent& event)
 {
